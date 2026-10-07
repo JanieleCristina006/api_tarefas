@@ -1,17 +1,12 @@
 import { HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
 import { PayloadTokenDto } from '../auth/dto/payload-token.dto';
 import { HashingServiceProtocol } from '../auth/hash/hash.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
 import { createUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
-
-jest.mock('node:fs/promises', () => ({
-  writeFile: jest.fn(),
-}));
 
 jest.mock('../prisma/prisma.service', () => ({
   PrismaService: class PrismaService {},
@@ -26,11 +21,16 @@ type MockPrismaService = {
   };
 };
 
+type MockStorageService = {
+  uploadFile: jest.Mock;
+  getPublicUrl: jest.Mock;
+};
+
 describe('UsersService', () => {
   let userService: UsersService;
   let prismaService: MockPrismaService;
   let hashingService: jest.Mocked<HashingServiceProtocol>;
-  let writeFileMock: jest.MockedFunction<typeof fs.writeFile>;
+  let storageService: MockStorageService;
   const originalProtectedUserEmail = process.env.PROTECTED_USER_EMAIL;
 
   const tokenPayload: PayloadTokenDto = {
@@ -62,8 +62,6 @@ describe('UsersService', () => {
 
   beforeEach(async () => {
     process.env.PROTECTED_USER_EMAIL = 'protegido@email.com';
-    writeFileMock = fs.writeFile as jest.MockedFunction<typeof fs.writeFile>;
-    writeFileMock.mockResolvedValue();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -86,6 +84,15 @@ describe('UsersService', () => {
             compare: jest.fn(),
           },
         },
+        {
+          provide: StorageService,
+          useValue: {
+            uploadFile: jest.fn().mockResolvedValue('avatars/1.png'),
+            getPublicUrl: jest
+              .fn()
+              .mockReturnValue('https://storage.example.com/files/avatars/1.png'),
+          },
+        },
       ],
     }).compile();
 
@@ -94,6 +101,7 @@ describe('UsersService', () => {
     hashingService = module.get<jest.Mocked<HashingServiceProtocol>>(
       HashingServiceProtocol,
     );
+    storageService = module.get<MockStorageService>(StorageService);
   });
 
   afterEach(() => {
@@ -385,7 +393,7 @@ describe('UsersService', () => {
         id: 1,
         name: 'janiele',
         email: 'janiele@teste.com',
-        avatar: '1.png',
+        avatar: 'https://storage.example.com/files/avatars/1.png',
       };
 
       prismaService.user.findFirst.mockResolvedValue(userFromDatabase);
@@ -394,21 +402,25 @@ describe('UsersService', () => {
       const result = await userService.uploadAvatarImage(tokenPayload, file);
 
       expect(result).toEqual(updatedUser);
-      expect(writeFileMock).toHaveBeenCalledWith(
-        path.resolve(process.cwd(), 'files', '1.png'),
-        file.buffer,
-      );
       expect(prismaService.user.findFirst).toHaveBeenCalledWith({
         where: {
           id: tokenPayload.sub,
         },
       });
+      expect(storageService.uploadFile).toHaveBeenCalledWith({
+        key: 'avatars/1.png',
+        body: file.buffer,
+        contentType: file.mimetype,
+      });
+      expect(storageService.getPublicUrl).toHaveBeenCalledWith(
+        'avatars/1.png',
+      );
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: {
           id: userFromDatabase.id,
         },
         data: {
-          avatar: '1.png',
+          avatar: 'https://storage.example.com/files/avatars/1.png',
         },
         select: {
           id: true,
@@ -419,24 +431,29 @@ describe('UsersService', () => {
       });
     });
 
-    it('should throw when the avatar cannot be saved', async () => {
+    it('should throw when the avatar cannot be uploaded', async () => {
       const file = {
         originalname: 'avatar.png',
         buffer: Buffer.from('image'),
       } as Express.Multer.File;
 
-      writeFileMock.mockRejectedValue(new Error('file error'));
+      prismaService.user.findFirst.mockResolvedValue(userFromDatabase);
+      storageService.uploadFile.mockRejectedValue(new Error('storage error'));
 
       await expect(
         userService.uploadAvatarImage(tokenPayload, file),
       ).rejects.toMatchObject({
         status: HttpStatus.BAD_REQUEST,
       });
-      expect(prismaService.user.findFirst).not.toHaveBeenCalled();
+      expect(prismaService.user.findFirst).toHaveBeenCalledWith({
+        where: {
+          id: tokenPayload.sub,
+        },
+      });
       expect(prismaService.user.update).not.toHaveBeenCalled();
     });
 
-    it('should throw when the user is not found after saving the avatar', async () => {
+    it('should throw when the user is not found before uploading the avatar', async () => {
       const file = {
         originalname: 'avatar.png',
         buffer: Buffer.from('image'),
@@ -449,10 +466,7 @@ describe('UsersService', () => {
       ).rejects.toMatchObject({
         status: HttpStatus.BAD_REQUEST,
       });
-      expect(writeFileMock).toHaveBeenCalledWith(
-        path.resolve(process.cwd(), 'files', '1.png'),
-        file.buffer,
-      );
+      expect(storageService.uploadFile).not.toHaveBeenCalled();
       expect(prismaService.user.update).not.toHaveBeenCalled();
     });
 
@@ -467,7 +481,7 @@ describe('UsersService', () => {
       ).rejects.toMatchObject({
         status: HttpStatus.FORBIDDEN,
       });
-      expect(writeFileMock).not.toHaveBeenCalled();
+      expect(storageService.uploadFile).not.toHaveBeenCalled();
       expect(prismaService.user.findFirst).not.toHaveBeenCalled();
       expect(prismaService.user.update).not.toHaveBeenCalled();
     });

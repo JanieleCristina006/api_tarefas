@@ -1,7 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 
 const mockSwaggerConfig = {
-  title: 'Lista de tarefas',
+  title: 'API de Tarefas',
 };
 const mockSwaggerDocument = {
   openapi: '3.0.0',
@@ -63,27 +63,27 @@ describe('main bootstrap', () => {
       expect.any(ValidationPipe),
     );
     expect(mockDocumentBuilder.setTitle).toHaveBeenCalledWith(
-      'Lista de tarefas',
+      'API de Tarefas',
     );
     expect(mockDocumentBuilder.setDescription).toHaveBeenCalledWith(
-      'API para cadastro de usuários, autenticação JWT, upload de avatar e gerenciamento de tarefas.',
+      'API REST para autenticacao, gerenciamento de usuarios, upload de avatar e controle de tarefas.',
     );
     expect(mockDocumentBuilder.addBearerAuth).toHaveBeenCalledTimes(1);
     expect(mockDocumentBuilder.addTag).toHaveBeenCalledWith(
-      'App',
-      'Rotas básicas da aplicação',
+      'Status',
+      'Disponibilidade e informacoes gerais da API',
     );
     expect(mockDocumentBuilder.addTag).toHaveBeenCalledWith(
       'Auth',
-      'Autenticação e emissão de token JWT',
+      'Autenticacao e emissao de token JWT',
     );
     expect(mockDocumentBuilder.addTag).toHaveBeenCalledWith(
       'Users',
-      'Cadastro, consulta, atualização e exclusão de usuários',
+      'Cadastro, consulta, atualizacao e exclusao de usuarios',
     );
     expect(mockDocumentBuilder.addTag).toHaveBeenCalledWith(
       'Tasks',
-      'Criação, consulta, atualização e exclusão de tarefas',
+      'Criacao, consulta, atualizacao e exclusao de tarefas',
     );
     expect(mockDocumentBuilder.setVersion).toHaveBeenCalledWith('1.0');
     expect(mockSwaggerSetup).toHaveBeenCalledWith(

@@ -13,31 +13,26 @@ generator client {
 
 datasource db {
   provider = "postgresql"
- 
 }
-
 
 model Task {
-  id            Int       @id @default(autoincrement())
-  name          String
-  description   String
-  completed     Boolean   @default(false)
-  createAt      DateTime? @default(now())
-  userId        Int?
-  user          User?     @relation(fields: [userId],references: [id],onDelete: Cascade)
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String
+  completed   Boolean   @default(false)
+  createAt    DateTime? @default(now())
+  userId      Int?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-
 model User {
-  id            Int       @id @default(autoincrement())
-  name          String
-  passwordHash  String 
-  email         String   @unique
-  createAt      DateTime? @default(now())
-  Task          Task[]
-  active        Boolean   @default(true)
+  id           Int       @id @default(autoincrement())
+  name         String
+  passwordHash String
+  email        String    @unique
+  createAt     DateTime? @default(now())
+  Task         Task[]
+  active       Boolean   @default(true)
 
-  avatar        String?
-
-  
+  avatar String?
 }

@@ -4,15 +4,16 @@ import { createUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { HashingServiceProtocol } from '../auth/hash/hash.service';
 import { PayloadTokenDto } from '../auth/dto/payload-token.dto';
+import { StorageService } from '../storage/storage.service';
 
 import * as path from 'node:path';
-import * as fs from 'node:fs/promises';
 
 @Injectable()
 export class UsersService {
   constructor(
     private prisma: PrismaService,
     private readonly hashingService: HashingServiceProtocol,
+    private readonly storageService: StorageService,
   ) {}
 
   private getProtectedUserEmail() {
@@ -208,11 +209,7 @@ export class UsersService {
         .toLowerCase()
         .substring(1);
 
-      const fileName = `${tokenPayload.sub}.${fileExtension}`;
-
-      const fileLocale = path.resolve(process.cwd(), 'files', fileName);
-
-      await fs.writeFile(fileLocale, file.buffer);
+      const avatarKey = `avatars/${tokenPayload.sub}.${fileExtension}`;
 
       const user = await this.prisma.user.findFirst({
         where: {
@@ -227,12 +224,19 @@ export class UsersService {
         );
       }
 
+      await this.storageService.uploadFile({
+        key: avatarKey,
+        body: file.buffer,
+        contentType: file.mimetype,
+      });
+      const avatarUrl = this.storageService.getPublicUrl(avatarKey);
+
       const updatedUser = await this.prisma.user.update({
         where: {
           id: user.id,
         },
         data: {
-          avatar: fileName,
+          avatar: avatarUrl,
         },
         select: {
           id: true,

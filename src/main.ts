@@ -15,15 +15,15 @@ async function bootstrap() {
   );
 
   const configSwagger = new DocumentBuilder()
-    .setTitle('Lista de tarefas')
+    .setTitle('API de Tarefas')
     .setDescription(
-      'API para cadastro de usuários, autenticação JWT, upload de avatar e gerenciamento de tarefas.',
+      'API REST para autenticacao, gerenciamento de usuarios, upload de avatar e controle de tarefas.',
     )
     .addBearerAuth()
-    .addTag('App', 'Rotas básicas da aplicação')
-    .addTag('Auth', 'Autenticação e emissão de token JWT')
-    .addTag('Users', 'Cadastro, consulta, atualização e exclusão de usuários')
-    .addTag('Tasks', 'Criação, consulta, atualização e exclusão de tarefas')
+    .addTag('Status', 'Disponibilidade e informacoes gerais da API')
+    .addTag('Auth', 'Autenticacao e emissao de token JWT')
+    .addTag('Users', 'Cadastro, consulta, atualizacao e exclusao de usuarios')
+    .addTag('Tasks', 'Criacao, consulta, atualizacao e exclusao de tarefas')
     .setVersion('1.0')
     .build();
 
