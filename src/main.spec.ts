@@ -66,24 +66,24 @@ describe('main bootstrap', () => {
       'API de Tarefas',
     );
     expect(mockDocumentBuilder.setDescription).toHaveBeenCalledWith(
-      'API REST para autenticacao, gerenciamento de usuarios, upload de avatar e controle de tarefas.',
+      'API REST para autenticação, gerenciamento de usuários, upload de avatar e controle de tarefas.',
     );
     expect(mockDocumentBuilder.addBearerAuth).toHaveBeenCalledTimes(1);
     expect(mockDocumentBuilder.addTag).toHaveBeenCalledWith(
       'Status',
-      'Disponibilidade e informacoes gerais da API',
+      'Disponibilidade e informações gerais da API',
     );
     expect(mockDocumentBuilder.addTag).toHaveBeenCalledWith(
       'Auth',
-      'Autenticacao e emissao de token JWT',
+      'Autenticação e emissão de token JWT',
     );
     expect(mockDocumentBuilder.addTag).toHaveBeenCalledWith(
       'Users',
-      'Cadastro, consulta, atualizacao e exclusao de usuarios',
+      'Cadastro, consulta, atualização e exclusão de usuários',
     );
     expect(mockDocumentBuilder.addTag).toHaveBeenCalledWith(
       'Tasks',
-      'Criacao, consulta, atualizacao e exclusao de tarefas',
+      'Criação, consulta, atualização e exclusão de tarefas',
     );
     expect(mockDocumentBuilder.setVersion).toHaveBeenCalledWith('1.0');
     expect(mockSwaggerSetup).toHaveBeenCalledWith(

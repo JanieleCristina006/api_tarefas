@@ -42,7 +42,7 @@ export class UserWithTasksResponseDto extends BasicUserResponseDto {
 export class UserAvatarResponseDto extends BasicUserResponseDto {
   @ApiProperty({
     example: 'https://storage.example.com/files/avatars/3.png',
-    description: 'URL publica do avatar salvo no bucket.',
+    description: 'URL pública do avatar salvo no bucket.',
   })
   avatar: string;
 }

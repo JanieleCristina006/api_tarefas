@@ -15,10 +15,10 @@ export class AppController {
   @Get()
   @ApiOperation({
     summary: 'Verificar disponibilidade da API',
-    description: 'Confirma que a API esta online e respondendo requisicoes.',
+    description: 'Confirma que a API está online e respondendo requisições.',
   })
   @ApiOkResponse({
-    description: 'API disponivel.',
+    description: 'API disponível.',
     schema: {
       example: 'Hello World!',
     },
