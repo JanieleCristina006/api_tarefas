@@ -1,8 +1,8 @@
 const mockAdapter = {
-  name: 'sqlite-adapter',
+  name: 'neon-adapter',
 };
 const mockPrismaClientConstructor = jest.fn();
-const mockPrismaBetterSqlite3Constructor = jest.fn();
+const mockPrismaNeonConstructor = jest.fn();
 
 jest.mock(
   '../../generated/prisma/client.cjs',
@@ -16,9 +16,9 @@ jest.mock(
   { virtual: true },
 );
 
-jest.mock('@prisma/adapter-better-sqlite3', () => ({
-  PrismaBetterSqlite3: jest.fn().mockImplementation((options: unknown) => {
-    mockPrismaBetterSqlite3Constructor(options);
+jest.mock('@prisma/adapter-neon', () => ({
+  PrismaNeon: jest.fn().mockImplementation((options: unknown) => {
+    mockPrismaNeonConstructor(options);
     return mockAdapter;
   }),
 }));
@@ -30,19 +30,19 @@ describe('PrismaService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    process.env.DATABASE_URL = 'file:test.db';
+    process.env.DATABASE_URL = 'postgres://test:test@localhost:5432/test';
   });
 
   afterAll(() => {
     process.env.DATABASE_URL = originalDatabaseUrl;
   });
 
-  it('should create the prisma client with the sqlite adapter', () => {
+  it('should create the prisma client with the Neon adapter', () => {
     const prismaService = new PrismaService();
 
     expect(prismaService).toBeInstanceOf(PrismaService);
-    expect(mockPrismaBetterSqlite3Constructor).toHaveBeenCalledWith({
-      url: 'file:test.db',
+    expect(mockPrismaNeonConstructor).toHaveBeenCalledWith({
+      connectionString: 'postgres://test:test@localhost:5432/test',
     });
     expect(mockPrismaClientConstructor).toHaveBeenCalledWith({
       adapter: mockAdapter,

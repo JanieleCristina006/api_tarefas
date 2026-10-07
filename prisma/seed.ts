@@ -1,28 +1,18 @@
 import 'dotenv/config';
-import Database from 'better-sqlite3';
+import { PrismaNeon } from '@prisma/adapter-neon';
+import { PrismaClient } from '../generated/prisma/client.cjs';
 import * as bcrypt from 'bcryptjs';
-import * as path from 'node:path';
 
-type UserRow = {
-  id: number;
-};
+function createPrismaClient() {
+  const connectionString = process.env.DATABASE_URL;
 
-function getDatabasePath() {
-  const databaseUrl = process.env.DATABASE_URL;
-
-  if (!databaseUrl) {
-    throw new Error('DATABASE_URL não foi definida.');
+  if (!connectionString) {
+    throw new Error('DATABASE_URL nao foi definida.');
   }
 
-  if (!databaseUrl.startsWith('file:')) {
-    throw new Error('O seed atual suporta apenas DATABASE_URL SQLite file:.');
-  }
+  const adapter = new PrismaNeon({ connectionString });
 
-  const sqlitePath = databaseUrl.replace(/^file:/, '');
-
-  return path.isAbsolute(sqlitePath)
-    ? sqlitePath
-    : path.resolve(process.cwd(), sqlitePath);
+  return new PrismaClient({ adapter });
 }
 
 async function seedInitialUser() {
@@ -34,49 +24,35 @@ async function seedInitialUser() {
 
   if (!email) {
     throw new Error(
-      'SEED_USER_EMAIL é obrigatória para criar o usuário inicial.',
+      'SEED_USER_EMAIL e obrigatoria para criar o usuario inicial.',
     );
   }
 
   if (!password) {
     throw new Error(
-      'SEED_USER_PASSWORD é obrigatória em produção para criar o usuário inicial.',
+      'SEED_USER_PASSWORD e obrigatoria em producao para criar o usuario inicial.',
     );
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  const database = new Database(getDatabasePath());
+  const prisma = createPrismaClient();
 
   try {
-    const existingUser = database
-      .prepare('SELECT id FROM "User" WHERE email = ?')
-      .get(email) as UserRow | undefined;
+    await prisma.user.upsert({
+      where: { email },
+      update: { name, passwordHash, active: true },
+      create: { name, email, passwordHash, active: true },
+      select: { id: true },
+    });
 
-    if (existingUser) {
-      database
-        .prepare(
-          'UPDATE "User" SET name = ?, passwordHash = ?, active = 1 WHERE id = ?',
-        )
-        .run(name, passwordHash, existingUser.id);
-
-      console.log(`Usuário inicial atualizado: ${email}`);
-      return;
-    }
-
-    database
-      .prepare(
-        'INSERT INTO "User" (name, email, passwordHash, active) VALUES (?, ?, ?, 1)',
-      )
-      .run(name, email, passwordHash);
-
-    console.log(`Usuário inicial criado: ${email}`);
+    console.log(`Usuario inicial criado ou atualizado: ${email}`);
   } finally {
-    database.close();
+    await prisma.$disconnect();
   }
 }
 
 seedInitialUser().catch((error) => {
-  console.error('Falha ao criar usuário inicial.');
+  console.error('Falha ao criar usuario inicial.');
   console.error(error);
   process.exitCode = 1;
 });
